@@ -28,4 +28,5 @@ This is a project for those interested in:
 
 ## Models and spaces
 
-* Model ([1/4 of Thousand Plateaus 1 epoch](https://huggingface.co/genaforvena/the_soft_delerizome_machine_a_thousand_guattaris_fourth_of_plateaus_once)) and Space ([Morosia_the_Lugubrious_One_Fourth](https://huggingface.co/spaces/genaforvena/Morosia_the_Lugubrious_One_Fourth))
+* iteration 2 (used model from iteration 1 and fine-tuned it on SCUM manifesto): Model ([Scum of Thousand Plateaus 1 epoch](https://huggingface.co/genaforvena/the_soft_scum_delerizome_machine_a_thousand_guattaris)) and Space ([Morosia_the_Lugubrious_Scum](https://huggingface.co/spaces/genaforvena/Morosia_the_Lugubrious_Scum))
+* iteration 1: Model ([1/4 of Thousand Plateaus 1 epoch](https://huggingface.co/genaforvena/the_soft_delerizome_machine_a_thousand_guattaris_fourth_of_plateaus_once)) and Space ([Morosia_the_Lugubrious_One_Fourth](https://huggingface.co/spaces/genaforvena/Morosia_the_Lugubrious_One_Fourth))
