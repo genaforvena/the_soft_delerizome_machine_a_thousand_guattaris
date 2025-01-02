@@ -60,8 +60,6 @@ def scrape_training_texts():
     # Scrape and prepare text data
     text_urls = [
         "https://raw.githubusercontent.com/genaforvena/skiffs/main/resources/worstward_hoe.txt",  # Raw URL
-        "https://raw.githubusercontent.com/dscape/spell/master/test/resources/big.txt",
-        "https://raw.githubusercontent.com/dscape/spell/master/test/resources/alice.txt",
         # Add more raw URLs here for a more diverse dataset
     ]
     training_text = "training_text.txt"
