@@ -12,9 +12,10 @@ import re
 import torch
 import gradio as gr
 
-base_model = "genaforvena/the_soft_delerizome_machine_a_thousand_guattaris_fourth_of_plateaus_once"
-train_epochs = 5
+base_model = "./gospel"
+train_epochs = 1
 text_urls = [
+    #"https://github.com/genaforvena/skiffs/blob/main/resources/gospel.txt"
     "https://github.com/genaforvena/skiffs/blob/main/resources/scum_manifesto.txt"
 ]
 
@@ -43,7 +44,7 @@ def scrape_text_from_url(url):
         return ""
 
 
-def split_text_into_chunks(text, chunk_size=128):
+def split_text_into_chunks(text, chunk_size=32):
     """Split text into chunks of approximately `chunk_size` words."""
     words = text.split()
     chunks = [" ".join(words[i:i+chunk_size]) for i in range(0, len(words), chunk_size)]
@@ -122,7 +123,7 @@ def finetuned_model(tokenized_datasets, tokenizer):
         num_train_epochs=train_epochs,
         per_device_train_batch_size=8,
         gradient_accumulation_steps=2,
-        learning_rate=5e-5,  # Set learning rate
+        learning_rate=1e-5,  # Set learning rate
         save_steps=500,
         save_total_limit=2,
         logging_dir="./logs",
