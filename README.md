@@ -28,6 +28,7 @@ This is a project for those interested in:
 
 ## Models and spaces
 
+Main demo (an ensemble of all models and summarizator at the end): https://huggingface.co/spaces/genaforvena/Morosia_the_Lugubrious
 * iteration 3 (used model from iteration 2 and fine-tuned it on Gospel by Tolstoy): Model ([Scum Gospel of Thousand Plateaus 1 epoch](https://huggingface.co/genaforvena/the_soft_scum_gospel_delerizome_machine_a_thousand_guattaris)) and Space ([Morosia_the_Lugubrious_Scum](https://huggingface.co/spaces/genaforvena/Gospel_of_Morosia_the_Lugubrious_Scum))
 * iteration 2 (used model from iteration 1 and fine-tuned it on SCUM manifesto): Model ([Scum of Thousand Plateaus 1 epoch](https://huggingface.co/genaforvena/the_soft_scum_delerizome_machine_a_thousand_guattaris)) and Space ([Gospel_of_Morosia_the_Lugubrious_Scum](https://huggingface.co/spaces/genaforvena/Morosia_the_Lugubrious_Scum))
 * iteration 1: Model ([1/4 of Thousand Plateaus 1 epoch](https://huggingface.co/genaforvena/the_soft_delerizome_machine_a_thousand_guattaris_fourth_of_plateaus_once)) and Space ([Morosia_the_Lugubrious_One_Fourth](https://huggingface.co/spaces/genaforvena/Morosia_the_Lugubrious_One_Fourth))
