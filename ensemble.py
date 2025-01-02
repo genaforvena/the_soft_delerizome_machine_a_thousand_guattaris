@@ -12,37 +12,41 @@ def load_model(model_path):
 
 
 # Load your three models
-model1, tokenizer1 = load_model('genaforvena/the_soft_scum_gospel_delerizome_machine_a_thousand_guattaris')
-model2, tokenizer2 = load_model('genaforvena/the_soft_scum_delerizome_machine_a_thousand_guattaris')
-model3, tokenizer3 = load_model('genaforvena/the_soft_delerizome_machine_a_thousand_guattaris_fourth_of_plateaus_once')
+deleuze, tokenizer1 = load_model('genaforvena/the_soft_delerizome_machine_a_thousand_guattaris_fourth_of_plateaus_once')
+gospel, tokenizer2 = load_model('genaforvena/the_soft_scum_gospel_delerizome_machine_a_thousand_guattaris')
+scum, tokenizer3 = load_model('genaforvena/the_soft_scum_delerizome_machine_a_thousand_guattaris')
 
 # Define the prompt
 prompt = "ghost"
 
 
 # Function to generate text
-def generate_text(model, tokenizer, prompt, max_length=250):
+def generate_text(model, tokenizer, prompt, max_new_tokens, temperature):
     inputs = tokenizer.encode(prompt, return_tensors='pt')
-    output = model.generate(inputs, max_length=max_length, do_sample=True, top_p=0.95, top_k=50)
+    output = model.generate(inputs, max_new_tokens=max_new_tokens, do_sample=True, top_p=0.95, top_k=50)
     text = tokenizer.decode(output[0], skip_special_tokens=True)
     return text
 
 
 # Generate outputs
-output1 = generate_text(model1, tokenizer1, prompt)
-output2 = generate_text(model2, tokenizer2, prompt)
-output3 = generate_text(model3, tokenizer3, prompt)
+output1 = generate_text(deleuze, tokenizer1, prompt, 
+                        max_new_tokens=700, temperature=0.6)
+output2 = generate_text(scum, tokenizer2, output1, 
+                        max_new_tokens=300, temperature=1.7)
+output3 = generate_text(gospel, tokenizer3, prompt, 
+                        max_new_tokens=350, temperature=1.0)
 
 print("Output 1:\n", output1)
 print("\nOutput 2:\n", output2)
 print("\nOutput 3:\n", output3)
 
 # Generate the final ensembled output
-final_output = output1 + '\n' + output2 + '\n' + output3
+final_output = output2 + '\n' + output3
+print("\n\n\n------------\nmodels sum output: " + final_output)
 
 summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
 
-summary = summarizer(final_output, max_length=530, min_length=150, do_sample=False)
+summary = summarizer(final_output, max_length=600, min_length=250, do_sample=False)
 
 print("Summary:\n", summary[0]['summary_text'])
 
