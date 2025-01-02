@@ -12,6 +12,11 @@ import re
 import torch
 import gradio as gr
 
+base_model = "genaforvena/the_soft_delerizome_machine_a_thousand_guattaris_fourth_of_plateaus_once"
+train_epochs = 5
+text_urls = [
+    "https://github.com/genaforvena/skiffs/blob/main/resources/scum_manifesto.txt"
+]
 
 def clean_text(text):
     soup = BeautifulSoup(text, "html.parser")  # Parse HTML
@@ -38,7 +43,7 @@ def scrape_text_from_url(url):
         return ""
 
 
-def split_text_into_chunks(text, chunk_size=512):
+def split_text_into_chunks(text, chunk_size=128):
     """Split text into chunks of approximately `chunk_size` words."""
     words = text.split()
     chunks = [" ".join(words[i:i+chunk_size]) for i in range(0, len(words), chunk_size)]
@@ -58,10 +63,6 @@ def tokenize_function(tokenizer, examples):
 
 def scrape_training_texts():
     # Scrape and prepare text data
-    text_urls = [
-        "https://raw.githubusercontent.com/genaforvena/skiffs/main/resources/worstward_hoe.txt",  # Raw URL
-        # Add more raw URLs here for a more diverse dataset
-    ]
     training_text = "training_text.txt"
 
     all_texts = []
@@ -86,13 +87,13 @@ def prepare_dataset(training_text):
     with open(training_text, "r", encoding="utf-8") as infile:
         full_text = infile.read()
 
-    chunks = split_text_into_chunks(full_text, chunk_size=256)  # Adjust chunk_size as needed
+    chunks = split_text_into_chunks(full_text) 
     print(f"Total number of chunks created: {len(chunks)}")
 
     # Create a Dataset from the chunks
     dataset = Dataset.from_dict({"text": chunks})
 
-    tokenizer = AutoTokenizer.from_pretrained("gpt2")
+    tokenizer = AutoTokenizer.from_pretrained(base_model)
     tokenizer.pad_token = tokenizer.eos_token  # Set pad token
 
     tokenized_datasets = dataset.map(
@@ -110,7 +111,7 @@ def prepare_dataset(training_text):
 
 
 def finetuned_model(tokenized_datasets, tokenizer):
-    model = AutoModelForCausalLM.from_pretrained("gpt2")
+    model = AutoModelForCausalLM.from_pretrained(base_model)
     model.resize_token_embeddings(len(tokenizer))  # Adjust token embeddings
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model.to(device)
@@ -118,7 +119,7 @@ def finetuned_model(tokenized_datasets, tokenizer):
     finetuned_model_name = "./results"
     training_args = TrainingArguments(
         output_dir=finetuned_model_name,
-        num_train_epochs=1,  # Adjust as needed
+        num_train_epochs=train_epochs,
         per_device_train_batch_size=8,
         gradient_accumulation_steps=2,
         learning_rate=5e-5,  # Set learning rate
@@ -165,7 +166,6 @@ def generate_text(device, model, tokenizer, prompt, max_length=150, temperature=
 
 
 def launch_ui(model_path):
-    # Load the fine-tuned model and tokenizer
     model = AutoModelForCausalLM.from_pretrained(model_path)
     tokenizer = AutoTokenizer.from_pretrained(model_path)
     tokenizer.pad_token = tokenizer.eos_token
@@ -174,19 +174,8 @@ def launch_ui(model_path):
 
     def generate(prompt, max_length=150, temperature=0.8, top_k=50):
         return generate_text(device, model, tokenizer, prompt, max_length, temperature, top_k)
-
-    iface = gr.Interface(
-        fn=generate,
-        inputs=[
-            gr.inputs.Textbox(lines=2, placeholder="Enter your prompt here...", label="Prompt"),
-            gr.inputs.Slider(minimum=50, maximum=500, step=10, default=150, label="Max Length"),
-            gr.inputs.Slider(minimum=0.1, maximum=1.0, step=0.1, default=0.8, label="Temperature"),
-            gr.inputs.Slider(minimum=10, maximum=100, step=10, default=50, label="Top K"),
-        ],
-        outputs="text",
-        title="Fine-Tuned GPT-2 Text Generator",
-        description="Enter a prompt and adjust parameters to generate text using the fine-tuned GPT-2 model."
-    )
+    
+    iface = gr.Interface(fn=generate, inputs="text", outputs="text")
     iface.launch()
 
 
