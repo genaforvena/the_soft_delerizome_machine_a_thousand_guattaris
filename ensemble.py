@@ -44,7 +44,7 @@ print("\nOutput 3:\n", output3)
 final_output = output2 + '\n' + output3
 print("\n\n\n------------\nmodels sum output: " + final_output)
 
-summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
+summarizer = pipeline("summarization", model="Falconsai/text_summarization")
 
 summary = summarizer(final_output, max_length=600, min_length=250, do_sample=False)
 
