@@ -1,39 +1,38 @@
+import os
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torchvision import transforms, models
-dfrom torch.utils.data import Dataset, DataLoader
-from PIL import Image
-import os
+from torchvision import models, transforms
+from PIL import Image, ImageDraw
+import matplotlib.pyplot as plt
+from torchcam.methods import GradCAM
+import numpy as np
 
 
-# Dataset class to load raster images
-def convert_text_to_all_forms(input_txt_path, output_dir):
-    with open(input_txt_path, 'r', encoding='utf-8') as file:
-        text = file.read()
+def text_to_raster(input_file, output_file, char_pixel_size=1, max_width=2000):
+    with open(input_file, 'r', encoding='utf-8') as file:
+        lines = file.readlines()
 
-    os.makedirs(output_dir, exist_ok=True)
+    lines = [line.rstrip('\n') for line in lines]
+    max_len = min(max(len(line) for line in lines), max_width)
 
-    raster_img = text_to_raster(text)
-    raster_img.save(os.path.join(output_dir, 'raster.png'))
+    height = len(lines) * char_pixel_size
+    width = max_len * char_pixel_size
 
-class RasterTextDataset(Dataset):
-    def __init__(self, root_dir, transform=None):
-        self.root_dir = root_dir
-        self.file_list = [f for f in os.listdir(root_dir) if f.endswith('.png')]
-        self.transform = transform
+    img = Image.new('RGB', (width, height), color='white')
+    draw = ImageDraw.Draw(img)
 
-    def __len__(self):
-        return len(self.file_list)
+    for y, line in enumerate(lines):
+        for x, ch in enumerate(line[:max_len]):
+            if ch != ' ':
+                draw.rectangle(
+                    [x * char_pixel_size, y * char_pixel_size,
+                     (x + 1) * char_pixel_size, (y + 1) * char_pixel_size],
+                    fill=(0, 0, 0)
+                )
 
-    def __getitem__(self, idx):
-        img_name = os.path.join(self.root_dir, self.file_list[idx])
-        image = Image.open(img_name).convert('RGB')
-        if self.transform:
-            image = self.transform(image)
-        return image
+    img.save(output_file)
 
-# Simple CNN model for detecting patterns
 class PatternDetector(nn.Module):
     def __init__(self):
         super(PatternDetector, self).__init__()
@@ -48,32 +47,53 @@ class PatternDetector(nn.Module):
         x = torch.sigmoid(self.fc2(x))
         return x
 
-# Training loop
-def train_model(data_dir, epochs=10, batch_size=8, learning_rate=1e-4):
-    transform = transforms.Compose([
-        transforms.Resize((224, 224)),
-        transforms.ToTensor(),
-    ])
-
-    dataset = RasterTextDataset(root_dir=data_dir, transform=transform)
-    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
-
+def train_dummy_model(output_path):
     model = PatternDetector()
-    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+    dummy_input = torch.rand(8, 3, 224, 224)
+    dummy_labels = torch.ones(8, 1)
+    optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
     criterion = nn.BCELoss()
 
-    model.train()
-    for epoch in range(epochs):
-        for images in dataloader:
-            labels = torch.ones(images.size(0), 1)  # placeholder
-            optimizer.zero_grad()
-            outputs = model(images)
-            loss = criterion(outputs, labels)
-            loss.backward()
-            optimizer.step()
-        print(f"Epoch [{epoch+1}/{epochs}], Loss: {loss.item():.4f}")
+    for _ in range(5):  # Tiny training loop
+        outputs = model(dummy_input)
+        loss = criterion(outputs, dummy_labels)
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
 
-    torch.save(model.state_dict(), os.path.join(data_dir, 'pattern_detector.pth'))
+    torch.save(model.state_dict(), output_path)
 
-# Example training call:
-# train_model('output_visualisations')
+def analyze_text_raster(raster_path, model_path):
+    model = PatternDetector()
+    model.load_state_dict(torch.load(model_path))
+    model.eval()
+
+    transform = transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.ToTensor()
+    ])
+
+    img = Image.open(raster_path).convert('RGB')
+    img_tensor = transform(img).unsqueeze(0)
+    output = model(img_tensor)
+    print(f'Pattern score: {output.item()}')
+
+    cam_extractor = GradCAM(model, target_layer='features.layer4')
+    img_tensor.requires_grad_()
+    output = model(img_tensor)
+    activation_map = cam_extractor(output.squeeze(0).argmax(), img_tensor)[0].detach().numpy()
+
+    heatmap = plt.cm.jet(activation_map / activation_map.max())
+    heatmap_img = Image.fromarray((heatmap[:, :, :3] * 255).astype('uint8')).resize(img.size)
+    blended = Image.blend(img.convert('RGBA'), heatmap_img.convert('RGBA'), alpha=0.5)
+    blended.save('gradcam_overlay.png')
+
+
+if __name__ == '__main__':
+    if not os.path.exists('pattern_detector.pth'):
+        print('Model not found. Training dummy model...')
+        train_dummy_model('pattern_detector.pth')
+
+    text_to_raster('finnegans_wake.txt', 'raster.png')
+    analyze_text_raster('raster.png', 'pattern_detector.pth')
+    print('Analysis complete. Check raster.png and gradcam_overlay.png.')
